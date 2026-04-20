@@ -7,7 +7,7 @@ Real-time institutional order flow detection for Binance. Detects whale accumula
 **Features:**
 - 🔄 Real-time market data via Binance WebSocket
 - 🎯 Rule-based signal generation (NO LLM costs!)
-- 📊 Live dashboard with order book DOM, delta analysis, and fingerprint detection
+- 📊 **Live Web Dashboard** - Beautiful real-time UI at http://localhost:3001
 - 📱 Telegram notifications for trading signals
 - ♾️ 24/7 operation with auto-restart and health monitoring
 - 📈 Volume profile integration (POC, VAH, VAL)
@@ -75,7 +75,10 @@ SYMBOL=BTCUSDT
 
 Start the server:
 ```bash
-# Using process manager (recommended for 24/7 operation)
+# Start both backend and web dashboard (recommended)
+./start-all.sh start
+
+# Or use process manager for backend only
 ./manage.sh start
 
 # Or run directly
@@ -83,14 +86,41 @@ python server.py
 ```
 
 Server runs on `http://localhost:8000`
+Web Dashboard runs on `http://localhost:3001`
 
 **Process Management:**
 ```bash
-./manage.sh status   # Check if running
-./manage.sh logs     # View logs
-./manage.sh errors   # View errors
-./manage.sh restart  # Restart server
-./manage.sh stop     # Stop server
+./start-all.sh status   # Check all services
+./start-all.sh restart  # Restart everything
+./start-all.sh stop     # Stop all services
+./start-all.sh logs     # View backend logs
+./start-all.sh dashboard-logs  # View dashboard logs
+```
+
+---
+
+### Web Dashboard
+
+The system includes a beautiful real-time web dashboard:
+
+**Features:**
+- Live price and market metrics
+- Real-time delta chart
+- Order book DOM visualization
+- Current signal with entry/stop/targets
+- Fingerprint detection panel
+- Signal history
+- Connection status monitoring
+
+**Access:** http://localhost:3001
+
+**24/7 Auto-Start (macOS):**
+```bash
+# Install launchd service
+cp com.institutional.footprint.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.institutional.footprint.plist
+
+# The system will now auto-start on boot and restart on failure
 ```
 
 ---
