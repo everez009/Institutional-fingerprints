@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 from engine import InstitutionalEntryEngine
 from multi_engine import MultiSymbolEngine
+from telegram_notifier import TelegramNotifier
 
 app = FastAPI(title="Institutional Entry Detection API")
 
@@ -29,10 +30,14 @@ app.add_middleware(
 # engine = InstitutionalEntryEngine("BTCUSDT")
 
 # Option 2: Multi-symbol monitoring (active)
-multi_engine = MultiSymbolEngine(["BTCUSDT", "ETHUSDT", "PAXGUSDT"])
+multi_engine = MultiSymbolEngine(["BTCUSDT", "ETHUSDT", "PAXGUSDT","XAUUSDT"])
 
 # For backward compatibility, create a default engine
 engine = InstitutionalEntryEngine("BTCUSDT")
+
+# Telegram notifier instance
+telegram = TelegramNotifier()
+
 connected_clients: list[WebSocket] = []
 
 
@@ -196,6 +201,79 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.receive_text()  # Keep alive
     except WebSocketDisconnect:
         connected_clients.remove(websocket)
+
+
+# ─────────────────────────────────────────────
+# TELEGRAM NOTIFICATIONS
+# ─────────────────────────────────────────────
+
+@app.post("/telegram/test")
+async def test_telegram():
+    """Send a test notification to Telegram"""
+    if not telegram.is_configured():
+        return JSONResponse(
+            {"error": "Telegram not configured. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env file"},
+            status_code=400
+        )
+    
+    try:
+        success = await telegram.send_alert(
+            title="Test Notification",
+            message="Your Institutional Footprint Detection System is working correctly! 🎉\n\nYou will receive alerts for:\n• LONG/SHORT signals\n• HIGH/MEDIUM conviction trades\n• Market updates",
+            level="SUCCESS"
+        )
+        
+        if success:
+            return JSONResponse({"status": "success", "message": "Test notification sent successfully!"})
+        else:
+            return JSONResponse({"error": "Failed to send message"}, status_code=500)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/telegram/status")
+async def telegram_status():
+    """Check Telegram configuration status"""
+    return JSONResponse({
+        "configured": telegram.is_configured(),
+        "bot_token_set": bool(telegram.bot_token),
+        "chat_id_set": bool(telegram.chat_id)
+    })
+
+
+@app.post("/telegram/market-update")
+async def send_market_update():
+    """Send current market state via Telegram"""
+    if not telegram.is_configured():
+        return JSONResponse(
+            {"error": "Telegram not configured"},
+            status_code=400
+        )
+    
+    try:
+        # Get multi-symbol summary
+        summary = multi_engine.get_summary()
+        
+        message = "📊 *MARKET OVERVIEW*\n\n"
+        for sym_data in summary:
+            symbol = sym_data.get('symbol', 'UNKNOWN')
+            price = sym_data.get('price', 0)
+            signal = sym_data.get('signal', 'FLAT')
+            conviction = sym_data.get('conviction', 'LOW')
+            
+            emoji = {"LONG": "🟢", "SHORT": "🔴", "MONITOR": "🟡"}.get(signal, "⚪")
+            message += f"{emoji} *{symbol}*\n"
+            message += f"Price: ${price:,.2f}\n"
+            message += f"Signal: {signal} ({conviction})\n\n"
+        
+        success = await telegram._send_message(message, parse_mode="Markdown")
+        
+        if success:
+            return JSONResponse({"status": "success", "message": "Market update sent!"})
+        else:
+            return JSONResponse({"error": "Failed to send"}, status_code=500)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 # ─────────────────────────────────────────────
