@@ -1,22 +1,37 @@
 [Unit]
-Description=Institutional Entry Detection System
+Description=Institutional Footprint Detection System
 After=network.target
+Wants=network-online.target
 
 [Service]
 Type=simple
-User=YOUR_USERNAME
-WorkingDirectory=/path/to/institutional-footprint
-EnvironmentFile=/path/to/institutional-footprint/.env
-ExecStart=/usr/bin/python3 /path/to/institutional-footprint/server.py
+User=root
+WorkingDirectory=/root/institutional-footprint
+
+# Environment
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="NODE_ENV=production"
+
+# Start command
+ExecStart=/bin/bash /root/institutional-footprint/start-all.sh start
+
+# Stop command
+ExecStop=/bin/bash /root/institutional-footprint/start-all.sh stop
+
+# Restart policy
 Restart=always
 RestartSec=10
-StandardOutput=append:/path/to/institutional-footprint/server.log
-StandardError=append:/path/to/institutional-footprint/server_error.log
 
-# Security hardening
-NoNewPrivileges=true
-ProtectSystem=strict
-ReadWritePaths=/path/to/institutional-footprint
+# Resource limits
+LimitNOFILE=65536
+
+# Logging
+StandardOutput=append:/root/institutional-footprint/logs/systemd.log
+StandardError=append:/root/institutional-footprint/logs/systemd-error.log
+
+# Security
+NoNewPrivileges=false
+ProtectSystem=false
 
 [Install]
 WantedBy=multi-user.target
