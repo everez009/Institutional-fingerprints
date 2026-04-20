@@ -22,11 +22,14 @@ from telegram_notifier import TelegramNotifier
 # CONFIG
 # ─────────────────────────────────────────────
 
-SYMBOL = "BTCUSDT"
+SYMBOL = "BTCUSDT"  # Default symbol, can be changed via environment
 BINANCE_WS_BASE = "wss://stream.binance.com:9443/ws"
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_API_KEY = "YOUR_ANTHROPIC_API_KEY"  # Replace with your key
 ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
+
+# Supported symbols for multi-symbol tracking
+SUPPORTED_SYMBOLS = ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "XAUUSDT"]
 
 # Thresholds
 LARGE_WALL_THRESHOLD = 50.0          # BTC — adjust per asset
@@ -264,6 +267,7 @@ class InstitutionalEntryEngine:
 
         side = "sell" if is_buyer_maker else "buy"
         self.current_price = price
+        self.mid_price = price  # Update mid price from actual trades
 
         trade = {
             "price": price,
@@ -883,48 +887,71 @@ class InstitutionalEntryEngine:
     # ─────────────────────────────────────────
 
     async def run(self):
-        streams = f"{self.symbol}@depth@100ms/{self.symbol}@trade"
-        url = f"{BINANCE_WS_BASE}/{streams}"
+        # Use correct Binance combined stream format
+        streams = f"{self.symbol.lower()}@depth@100ms/{self.symbol.lower()}@trade"
+        url = f"wss://stream.binance.com:9443/ws/{streams}"
 
         print(f"[ENGINE] Connecting to Binance: {url}")
+        print(f"[ENGINE] Symbol: {self.symbol}")
 
         signal_interval = 300  # Generate signal every 5 min candle
         last_signal_time = 0
+        message_count = 0
 
-        async with websockets.connect(url) as ws:
-            async for raw in ws:
-                data = json.loads(raw)
-                stream = data.get("stream", "")
+        try:
+            async with websockets.connect(url) as ws:
+                print("[ENGINE] WebSocket connected successfully")
+                async for raw in ws:
+                    message_count += 1
+                    if message_count <= 3:
+                        print(f"[ENGINE] Received message #{message_count}")
+                    
+                    data = json.loads(raw)
+                    
+                    # For non-combined streams, data is direct
+                    # For combined streams, data is in 'data' field
+                    if "stream" in data and "data" in data:
+                        # Combined stream format
+                        stream_data = data["data"]
+                        stream_name = data["stream"]
+                    else:
+                        # Direct stream format
+                        stream_data = data
+                        stream_name = self.symbol
 
-                if "depth" in stream:
-                    self.process_depth_update(data["data"])
-                elif "trade" in stream:
-                    self.process_trade(data["data"])
+                    if "depth" in str(stream_name).lower() or "b" in stream_data and "a" in stream_data:
+                        self.process_depth_update(stream_data)
+                    elif "trade" in str(stream_name).lower() or "e" in stream_data and stream_data.get("e") == "trade":
+                        self.process_trade(stream_data)
 
-                if self.on_market_update:
-                    await self.on_market_update(self.build_market_state())
+                    if self.on_market_update:
+                        await self.on_market_update(self.build_market_state())
 
-                now = time.time()
-                if now - last_signal_time >= signal_interval and self.current_price > 0:
-                    try:
-                        # Generate signal using rule-based logic (NO LLM)
-                        signal = self.generate_signal()
-                        signal["payload"] = self.build_payload()
-                        self.latest_signal = signal
-                        self.signal_history.appendleft(signal)
-                        if self.on_signal:
-                            await self.on_signal(signal)
-                        
-                        # Send Telegram notification for significant signals
-                        if signal.get("signal") in ["LONG", "SHORT"] and signal.get("conviction") in ["HIGH", "MEDIUM"]:
-                            await self.telegram.send_signal(signal)
-                        
-                        print(f"[SIGNAL] {signal.get('signal')} | {signal.get('conviction')} | Score: {signal.get('total_score')}")
-                    except Exception as e:
-                        print(f"[ERROR] Signal generation failed: {e}")
-                        import traceback
-                        traceback.print_exc()
-                    last_signal_time = now
+                    now = time.time()
+                    if now - last_signal_time >= signal_interval and self.current_price > 0:
+                        try:
+                            # Generate signal using rule-based logic (NO LLM)
+                            signal = self.generate_signal()
+                            signal["payload"] = self.build_payload()
+                            self.latest_signal = signal
+                            self.signal_history.appendleft(signal)
+                            if self.on_signal:
+                                await self.on_signal(signal)
+                            
+                            # Send Telegram notification for significant signals
+                            if signal.get("signal") in ["LONG", "SHORT"] and signal.get("conviction") in ["HIGH", "MEDIUM"]:
+                                await self.telegram.send_signal(signal)
+                            
+                            print(f"[SIGNAL] {signal.get('signal')} | {signal.get('conviction')} | Score: {signal.get('total_score')}")
+                        except Exception as e:
+                            print(f"[ERROR] Signal generation failed: {e}")
+                            import traceback
+                            traceback.print_exc()
+                        last_signal_time = now
+        except Exception as e:
+            print(f"[ENGINE] WebSocket error: {e}")
+            import traceback
+            traceback.print_exc()
 
     def build_market_state(self) -> dict:
         """Lightweight state for UI real-time updates"""

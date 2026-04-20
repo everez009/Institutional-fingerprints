@@ -49,22 +49,25 @@ export default function Dashboard() {
   const [connected, setConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [deltaHistory, setDeltaHistory] = useState<{ time: string; delta: number; cumDelta: number }[]>([]);
+  const [currentSymbol, setCurrentSymbol] = useState('BTCUSDT');
+  const [availableSymbols, setAvailableSymbols] = useState<string[]>(['BTCUSDT', 'ETHUSDT', 'PAXGUSDT', 'XAUUSDT']);
 
   const fetchData = useCallback(async () => {
     try {
       // Fetch market state
       const stateRes = await fetch(`${API_URL}/state`);
+      if (!stateRes.ok) throw new Error('Failed to fetch state');
       const stateData = await stateRes.json();
       setMarketState(stateData);
       setLastUpdate(new Date());
       setConnected(true);
 
-      // Update delta history
-      if (stateData.delta !== undefined) {
+      // Update delta history only if we have real data
+      if (stateData.price > 0 || stateData.delta !== 0) {
         setDeltaHistory(prev => {
           const newPoint = {
             time: new Date().toLocaleTimeString(),
-            delta: stateData.delta,
+            delta: stateData.delta || 0,
             cumDelta: stateData.cumulative_delta || 0
           };
           const updated = [...prev, newPoint].slice(-50);
@@ -74,8 +77,17 @@ export default function Dashboard() {
 
       // Fetch signal history
       const historyRes = await fetch(`${API_URL}/signals/history`);
-      const historyData = await historyRes.json();
-      setSignalHistory(historyData.slice(0, 20));
+      if (historyRes.ok) {
+        const historyData = await historyRes.json();
+        setSignalHistory(historyData.slice(0, 20));
+      }
+
+      // Fetch current symbol
+      const symbolsRes = await fetch(`${API_URL}/symbols`);
+      if (symbolsRes.ok) {
+        const symbolsData = await symbolsRes.json();
+        setCurrentSymbol(symbolsData.current);
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
       setConnected(false);
@@ -87,6 +99,25 @@ export default function Dashboard() {
     const interval = setInterval(fetchData, 3000); // Poll every 3 seconds
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  const handleSymbolChange = async (symbol: string) => {
+    try {
+      const res = await fetch(`${API_URL}/symbol/switch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol })
+      });
+      if (res.ok) {
+        setCurrentSymbol(symbol);
+        // Clear data while waiting for new symbol
+        setDeltaHistory([]);
+        setSignalHistory([]);
+        setTimeout(fetchData, 2000); // Fetch after switch
+      }
+    } catch (error) {
+      console.error('Failed to switch symbol:', error);
+    }
+  };
 
   const getSignalColor = (signal: string) => {
     switch (signal) {
@@ -131,6 +162,20 @@ export default function Dashboard() {
           <p className="text-sm text-gray-500 mt-1">Real-time Order Flow Detection System</p>
         </div>
         <div className="flex items-center gap-4">
+          {/* Symbol Selector */}
+          <div className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2 border border-gray-800">
+            <span className="text-xs text-gray-500">SYMBOL:</span>
+            <select 
+              value={currentSymbol}
+              onChange={(e) => handleSymbolChange(e.target.value)}
+              className="bg-transparent text-sm font-mono text-blue-400 focus:outline-none cursor-pointer"
+            >
+              {availableSymbols.map(sym => (
+                <option key={sym} value={sym} className="bg-gray-900">{sym}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="flex items-center gap-2">
             {connected ? (
               <Wifi className="w-5 h-5 text-green-400" />
@@ -155,7 +200,7 @@ export default function Dashboard() {
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
-          <div className="text-xs text-gray-500 mb-1">CURRENT PRICE</div>
+          <div className="text-xs text-gray-500 mb-1">{currentSymbol} PRICE</div>
           <div className="text-2xl font-mono font-bold">
             ${marketState?.price?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '—'}
           </div>

@@ -127,6 +127,38 @@ async def force_signal():
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+@app.post("/symbol/switch")
+async def switch_symbol(request: dict):
+    """Switch trading symbol"""
+    global engine
+    symbol = request.get("symbol", "BTCUSDT").upper()
+    
+    if symbol not in ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "XAUUSDT"]:
+        return JSONResponse({"error": "Unsupported symbol"}, status_code=400)
+    
+    # Stop old engine
+    print(f"[SERVER] Switching from {engine.symbol.upper()} to {symbol}")
+    
+    # Create new engine with new symbol
+    engine = InstitutionalEntryEngine(symbol)
+    engine.on_market_update = on_market_update
+    engine.on_signal = on_signal
+    
+    # Restart engine
+    asyncio.create_task(engine.run())
+    
+    return JSONResponse({"status": "success", "symbol": symbol})
+
+
+@app.get("/symbols")
+async def get_symbols():
+    """Get supported symbols"""
+    return JSONResponse({
+        "current": engine.symbol.upper(),
+        "supported": ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "XAUUSDT"]
+    })
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -146,8 +178,14 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.on_event("startup")
 async def startup():
-    asyncio.create_task(engine.run())
-    print("[SERVER] Engine started")
+    print("[SERVER] Starting engine...")
+    try:
+        asyncio.create_task(engine.run())
+        print("[SERVER] Engine task created successfully")
+    except Exception as e:
+        print(f"[SERVER] Error starting engine: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
