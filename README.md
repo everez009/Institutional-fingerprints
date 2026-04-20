@@ -1,14 +1,17 @@
 # Institutional Entry Detection System
 
-Real-time institutional order flow detection for Binance. Detects whale accumulation, stop hunts, absorption, and iceberg orders — fires signal only at Phase 3 (entry confirmed).
+Real-time institutional order flow detection for Binance. Detects whale accumulation, stop hunts, absorption, and iceberg orders — fires signal only when all conditions are met.
+
+**✨ NO API KEYS REQUIRED - 100% Rule-Based Detection ✨**
 
 **Features:**
 - 🔄 Real-time market data via Binance WebSocket
-- 🤖 AI-powered signal generation using Claude Sonnet
+- 🎯 Rule-based signal generation (NO LLM costs!)
 - 📊 Live dashboard with order book DOM, delta analysis, and fingerprint detection
 - 📱 Telegram notifications for trading signals
 - ♾️ 24/7 operation with auto-restart and health monitoring
 - 📈 Volume profile integration (POC, VAH, VAL)
+- ⚡ Instant signal generation on candle close
 
 ---
 
@@ -60,16 +63,15 @@ cp .env.example .env
 
 Edit `.env` and add your credentials:
 ```python
-# Required: Anthropic API Key for LLM signals
-ANTHROPIC_API_KEY=sk-ant-your-key-here
-
-# Optional: Telegram notifications
+# Optional: Telegram notifications (recommended)
 TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
 TELEGRAM_CHAT_ID=your_chat_id_from_userinfobot
 
 # Trading configuration
 SYMBOL=BTCUSDT
 ```
+
+**Note:** No API keys required! The system uses rule-based detection instead of LLM.
 
 Start the server:
 ```bash
@@ -140,6 +142,35 @@ To receive trading signals via Telegram:
    ```bash
    curl -X POST http://localhost:8000/telegram/test
    ```
+
+---
+
+## Signal Generation (Rule-Based)
+
+The system uses a **scoring algorithm** to detect institutional activity and generate signals:
+
+### Scoring System
+
+| Fingerprint | Max Score | Conditions |
+|-------------|-----------|------------|
+| Absorption | +3 | 3+ candles = +3, 2 candles = +2, 1 candle = +1 |
+| Iceberg Orders | +2 | 8+ refreshes = +2, <8 refreshes = +1 |
+| Stop Hunt | +4 | Confirmed (reclaim + delta flip) = +4, Reclaim only = +3, Detected = +2 |
+| Delta Divergence | +2 | Bullish or bearish divergence detected |
+| Volume Spike | +1 | 3x+ average volume |
+
+### Signal Thresholds
+
+- **MONITOR:** Score < 6 (watching for setup)
+- **MEDIUM:** Score 6-8 (potential opportunity)
+- **HIGH:** Score 9+ (strong institutional activity)
+
+### Entry Conditions
+
+Signals fire LONG/SHORT only when:
+1. Stop hunt is **confirmed** (price reclaimed + delta flipped)
+2. Minimum conviction score of 6
+3. Clear entry, stop loss, and take profit levels
 
 ---
 

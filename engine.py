@@ -1,7 +1,8 @@
 """
 Institutional Entry Detection Engine
 Connects to Binance WebSocket, processes order flow data,
-detects institutional fingerprints, and calls LLM for signal generation.
+detects institutional fingerprints, and generates signals based on rule-based logic.
+NO LLM REQUIRED - All signals generated from detected market conditions.
 """
 
 import asyncio
@@ -36,6 +37,11 @@ ABSORPTION_MAX_PRICE_MOVE_PCT = 0.05
 VOLUME_SPIKE_RATIO = 3.0
 DELTA_DIVERGENCE_CANDLES = 3
 CANDLE_TIMEFRAME_SECONDS = 300       # 5 min candles
+
+# Signal Generation Thresholds (Rule-Based)
+MIN_CONVICTION_SCORE = 6             # Minimum score to generate signal
+HIGH_CONVICTION_SCORE = 9            # Score threshold for HIGH conviction
+MEDIUM_CONVICTION_SCORE = 6          # Score threshold for MEDIUM conviction
 
 
 # ─────────────────────────────────────────────
@@ -639,10 +645,211 @@ class InstitutionalEntryEngine:
         }
 
     # ─────────────────────────────────────────
-    # LLM SIGNAL GENERATION
+    # RULE-BASED SIGNAL GENERATION
     # ─────────────────────────────────────────
 
-    async def get_signal(self, payload: dict) -> dict:
+    def generate_signal(self) -> dict:
+        """
+        Generate trading signal based on detected institutional conditions.
+        NO LLM required - uses scoring system based on fingerprint detection.
+        """
+        self.update_swing_levels()
+        
+        # Detect all fingerprints
+        absorption = self.detect_absorption()
+        iceberg = self.detect_iceberg()
+        stop_hunt = self.detect_stop_hunt()
+        divergence = self.detect_delta_divergence()
+        vol_spike = self.detect_volume_spike()
+        
+        # Calculate conviction score
+        score = 0
+        reasons = []
+        conflicts = []
+        warnings = []
+        
+        # Phase tracking
+        phase = "NONE"
+        
+        # Score: Absorption (max +3)
+        if absorption.get("detected"):
+            duration = absorption.get("duration_candles", 0)
+            if duration >= 3:
+                score += 3
+                reasons.append(f"Strong absorption ({duration} candles)")
+            elif duration >= 2:
+                score += 2
+                reasons.append(f"Moderate absorption ({duration} candles)")
+            else:
+                score += 1
+                reasons.append("Weak absorption detected")
+        
+        # Score: Iceberg orders (max +2)
+        if iceberg.get("detected"):
+            refreshes = iceberg.get("refresh_count", 0)
+            if refreshes >= 8:
+                score += 2
+                reasons.append(f"Large iceberg ({refreshes} refreshes)")
+            else:
+                score += 1
+                reasons.append(f"Iceberg detected ({refreshes} refreshes)")
+        
+        # Score: Stop hunt (max +4) - KEY SIGNAL
+        if stop_hunt.get("detected"):
+            if stop_hunt.get("confirmed"):
+                score += 4
+                reasons.append("Confirmed stop hunt with reclaim + delta flip")
+                phase = "ENTRY_CONFIRMED"
+            elif stop_hunt.get("price_reclaimed"):
+                score += 3
+                reasons.append("Stop hunt with price reclaim")
+                phase = "STOP_HUNT"
+            else:
+                score += 2
+                reasons.append("Stop hunt detected (waiting for confirmation)")
+                phase = "STOP_HUNT"
+        
+        # Score: Delta divergence (max +2)
+        if divergence != "none":
+            score += 2
+            reasons.append(f"{divergence.capitalize()} delta divergence")
+        
+        # Score: Volume spike (max +1)
+        if vol_spike.get("detected"):
+            ratio = vol_spike.get("ratio", 0)
+            if ratio >= 5:
+                score += 1
+                reasons.append(f"Extreme volume spike ({ratio}x)")
+            elif ratio >= 3:
+                score += 1
+                reasons.append(f"Volume spike ({ratio}x)")
+        
+        # Determine direction
+        signal_direction = "FLAT"
+        entry_price = 0
+        stop_loss = 0
+        targets = {}
+        
+        if phase == "ENTRY_CONFIRMED":
+            # Check stop hunt direction
+            if stop_hunt.get("direction") == "long_stop_hunt":
+                signal_direction = "LONG"
+                entry_price = self.current_price
+                stop_loss = stop_hunt.get("swept_level", 0) * 0.998
+                tp1 = entry_price + (entry_price - stop_loss) * 1.5
+                tp2 = entry_price + (entry_price - stop_loss) * 3.0
+                targets = {"tp1": round(tp1, 2), "tp2": round(tp2, 2)}
+            elif stop_hunt.get("direction") == "short_stop_hunt":
+                signal_direction = "SHORT"
+                entry_price = self.current_price
+                stop_loss = stop_hunt.get("swept_level", 0) * 1.002
+                tp1 = entry_price - (stop_loss - entry_price) * 1.5
+                tp2 = entry_price - (stop_loss - entry_price) * 3.0
+                targets = {"tp1": round(tp1, 2), "tp2": round(tp2, 2)}
+        
+        # Check for conflicting signals
+        if absorption.get("detected") and iceberg.get("detected"):
+            if absorption.get("side") != iceberg.get("side"):
+                conflicts.append("Absorption and iceberg on opposite sides")
+                score -= 2
+        
+        if stop_hunt.get("detected") and not stop_hunt.get("confirmed"):
+            warnings.append("Stop hunt not fully confirmed - wait for delta flip")
+        
+        # Determine conviction level
+        if score >= HIGH_CONVICTION_SCORE:
+            conviction = "HIGH"
+        elif score >= MEDIUM_CONVICTION_SCORE:
+            conviction = "MEDIUM"
+        else:
+            conviction = "LOW"
+        
+        # Only generate signal if score meets minimum threshold
+        if score < MIN_CONVICTION_SCORE:
+            signal_direction = "MONITOR"
+            conviction = "LOW"
+        
+        # Calculate risk-reward ratio
+        rr_ratio = 0
+        if signal_direction in ["LONG", "SHORT"] and entry_price > 0 and stop_loss > 0:
+            risk = abs(entry_price - stop_loss)
+            reward = abs(targets.get("tp2", 0) - entry_price)
+            rr_ratio = round(reward / risk, 2) if risk > 0 else 0
+        
+        # Build primary reason
+        primary_reason = "; ".join(reasons[:3]) if reasons else "No strong signals detected"
+        
+        # Build institutional narrative
+        narrative_parts = []
+        if stop_hunt.get("detected"):
+            narrative_parts.append(f"Stop hunt {'confirmed' if stop_hunt.get('confirmed') else 'detected'}")
+        if absorption.get("detected"):
+            narrative_parts.append(f"{absorption.get('side', 'unknown')} absorption active")
+        if iceberg.get("detected"):
+            narrative_parts.append("Institutional iceberg order present")
+        if divergence != "none":
+            narrative_parts.append(f"{divergence} delta divergence")
+        
+        institutional_narrative = ". ".join(narrative_parts) if narrative_parts else "Monitoring for institutional activity"
+        
+        # Build invalidation condition
+        invalidation = ""
+        if signal_direction == "LONG":
+            invalidation = f"Price closes below {stop_loss:.2f}"
+        elif signal_direction == "SHORT":
+            invalidation = f"Price closes above {stop_loss:.2f}"
+        
+        signal = {
+            "signal": signal_direction,
+            "conviction": conviction,
+            "total_score": score,
+            "phase": phase,
+            "primary_reason": primary_reason,
+            "institutional_narrative": institutional_narrative,
+            "invalidation": invalidation,
+            "entry": {"price": round(entry_price, 2)},
+            "stop_loss": {"price": round(stop_loss, 2)},
+            "targets": targets,
+            "rr_ratio": rr_ratio,
+            "fingerprints_detected": {
+                "absorption": {
+                    "detected": absorption.get("detected", False),
+                    "score": 3 if absorption.get("duration_candles", 0) >= 3 else 2 if absorption.get("duration_candles", 0) >= 2 else 1 if absorption.get("detected") else 0,
+                    "detail": f"{absorption.get('side', 'none')} | {absorption.get('duration_candles', 0)} candles" if absorption.get("detected") else ""
+                },
+                "iceberg": {
+                    "detected": iceberg.get("detected", False),
+                    "score": 2 if iceberg.get("refresh_count", 0) >= 8 else 1 if iceberg.get("detected") else 0,
+                    "detail": f"{iceberg.get('refresh_count', 0)} refreshes | est. {iceberg.get('estimated_true_size', 0):.2f}" if iceberg.get("detected") else ""
+                },
+                "stop_hunt": {
+                    "detected": stop_hunt.get("detected", False),
+                    "score": 4 if stop_hunt.get("confirmed") else 3 if stop_hunt.get("price_reclaimed") else 2 if stop_hunt.get("detected") else 0,
+                    "detail": f"{stop_hunt.get('direction', 'none')} | Swept {stop_hunt.get('swept_level', 0):.2f}" if stop_hunt.get("detected") else ""
+                },
+                "delta_divergence": {
+                    "detected": divergence != "none",
+                    "score": 2 if divergence != "none" else 0,
+                    "detail": divergence if divergence != "none" else ""
+                },
+                "volume_spike": {
+                    "detected": vol_spike.get("detected", False),
+                    "score": 1 if vol_spike.get("detected") else 0,
+                    "detail": f"{vol_spike.get('ratio', 0):.1f}x volume" if vol_spike.get("detected") else ""
+                }
+            },
+            "conflicts": conflicts,
+            "warnings": warnings,
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        }
+        
+        return signal
+
+    # ─────────────────────────────────────────
+    # LLM SIGNAL GENERATION (DEPRECATED - Kept for reference)
+    # ─────────────────────────────────────────
+
+    async def get_signal_old(self, payload: dict) -> dict:
         system_prompt = open("institutional_entry_prompt.txt").read()
 
         async with aiohttp.ClientSession() as session:
@@ -699,10 +906,10 @@ class InstitutionalEntryEngine:
 
                 now = time.time()
                 if now - last_signal_time >= signal_interval and self.current_price > 0:
-                    payload = self.build_payload()
                     try:
-                        signal = await self.get_signal(payload)
-                        signal["payload"] = payload
+                        # Generate signal using rule-based logic (NO LLM)
+                        signal = self.generate_signal()
+                        signal["payload"] = self.build_payload()
                         self.latest_signal = signal
                         self.signal_history.appendleft(signal)
                         if self.on_signal:
@@ -714,7 +921,9 @@ class InstitutionalEntryEngine:
                         
                         print(f"[SIGNAL] {signal.get('signal')} | {signal.get('conviction')} | Score: {signal.get('total_score')}")
                     except Exception as e:
-                        print(f"[ERROR] LLM signal failed: {e}")
+                        print(f"[ERROR] Signal generation failed: {e}")
+                        import traceback
+                        traceback.print_exc()
                     last_signal_time = now
 
     def build_market_state(self) -> dict:

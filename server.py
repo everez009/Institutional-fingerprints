@@ -107,19 +107,24 @@ async def test_telegram():
 
 @app.post("/signal/force")
 async def force_signal():
-    """Manually trigger an LLM analysis"""
-    payload = engine.build_payload()
-    signal = await engine.get_signal(payload)
-    signal["payload"] = payload
-    engine.latest_signal = signal
-    engine.signal_history.appendleft(signal)
-    await on_signal(signal)
-    
-    # Send Telegram notification if significant
-    if signal.get("signal") in ["LONG", "SHORT"]:
-        await engine.telegram.send_signal(signal)
-    
-    return JSONResponse(signal)
+    """Manually trigger signal generation (rule-based, no LLM)"""
+    try:
+        # Generate signal using rule-based logic
+        signal = engine.generate_signal()
+        signal["payload"] = engine.build_payload()
+        engine.latest_signal = signal
+        engine.signal_history.appendleft(signal)
+        await on_signal(signal)
+        
+        # Send Telegram notification if significant
+        if signal.get("signal") in ["LONG", "SHORT"]:
+            await engine.telegram.send_signal(signal)
+        
+        return JSONResponse(signal)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 @app.websocket("/ws")
