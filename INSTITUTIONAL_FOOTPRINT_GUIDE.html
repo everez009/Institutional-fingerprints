@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Institutional Footprint Detection System - User Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #fff;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            font-size: 1.8em;
+            color: #1e40af;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            border-left: 4px solid #2563eb;
+            padding-left: 15px;
+        }
+        
+        h3 {
+            font-size: 1.4em;
+            color: #1e3a8a;
+            margin-top: 30px;
+            margin-bottom: 10px;
+        }
+        
+        h4 {
+            font-size: 1.2em;
+            color: #374151;
+            margin-top: 20px;
+            margin-bottom: 8px;
+        }
+        
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+        
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #dc2626;
+        }
+        
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: #2563eb;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+        
+        tr:hover {
+            background: #f3f4f6;
+        }
+        
+        .toc {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+            border-left: 4px solid #2563eb;
+        }
+        
+        .toc h2 {
+            margin-top: 0;
+            border: none;
+            padding-left: 0;
+        }
+        
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .toc li {
+            padding: 5px 0;
+        }
+        
+        .toc a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .info {
+            background: #dbeafe;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .success {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .checkmark {
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        hr {
+            border: none;
+            border-top: 2px solid #e5e7eb;
+            margin: 40px 0;
+        }
+        
+        .header-info {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .header-info h1 {
+            color: white;
+            border: none;
+            font-size: 2.8em;
+        }
+        
+        .header-info p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            text-align: center;
+        }
+        
+        @media print {
+            body {
+                padding: 20px;
+            }
+            
+            .no-print {
+                display: none;
+            }
+            
+            pre {
+                page-break-inside: avoid;
+            }
+            
+            h2, h3 {
+                page-break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-info">
+        <h1>Institutional Footprint Detection System</h1>
+        <p>Complete User Guide & Documentation</p>
+        <p style="font-size: 0.9em; margin-top: 10px;">Version 2.0.0 | April 2026</p>
+    </div>
+
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ul>
+            <li><a href="#overview">1. System Overview</a></li>
+            <li><a href="#quickstart">2. Quick Start</a></li>
+            <li><a href="#dashboard">3. Dashboard Guide</a></li>
+            <li><a href="#multi">4. Multi-Symbol Monitoring</a></li>
+            <li><a href="#signals">5. Signal Interpretation</a></li>
+            <li><a href="#telegram">6. Telegram Notifications</a></li>
+            <li><a href="#management">7. System Management</a></li>
+            <li><a href="#troubleshooting">8. Troubleshooting</a></li>
+            <li><a href="#advanced">9. Advanced Configuration</a></li>
+            <li><a href="#api">10. API Reference</a></li>
+        </ul>
+    </div>
+
+    <h2 id="overview">1. System Overview</h2>
+    
+    <h3>What It Does</h3>
+    <p>The Institutional Footprint Detection System monitors cryptocurrency markets in real-time to identify institutional trading patterns:</p>
+    <ul>
+        <li><strong>Absorption Detection</strong>: Identifies when large orders are being absorbed at key levels</li>
+        <li><strong>Iceberg Orders</strong>: Detects hidden large orders that refresh as they're filled</li>
+        <li><strong>Stop Hunts</strong>: Recognizes when price sweeps liquidity before reversing</li>
+        <li><strong>Delta Divergence</strong>: Spots discrepancies between price action and order flow</li>
+        <li><strong>Spoof Detection</strong>: Identifies fake orders placed to manipulate the market</li>
+    </ul>
+
+    <h3>Key Features</h3>
+    <ul>
+        <li><span class="checkmark">✅</span> <strong>Real-Time Monitoring</strong> - Live WebSocket connections to Binance</li>
+        <li><span class="checkmark">✅</span> <strong>Multi-Symbol Support</strong> - Monitor BTC, ETH, PAXG simultaneously</li>
+        <li><span class="checkmark">✅</span> <strong>Rule-Based Detection</strong> - No LLM costs, transparent scoring system</li>
+        <li><span class="checkmark">✅</span> <strong>Telegram Alerts</strong> - Instant notifications for high-conviction signals</li>
+        <li><span class="checkmark">✅</span> <strong>Web Dashboard</strong> - Beautiful UI for visual analysis</li>
+        <li><span class="checkmark">✅</span> <strong>24/7 Operation</strong> - Auto-restart on crashes or reboots</li>
+    </ul>
+
+    <h2 id="quickstart">2. Quick Start</h2>
+    
+    <h3>Access Dashboards</h3>
+    <div class="info">
+        <p><strong>Single Symbol View</strong>: http://localhost:3001</p>
+        <p><strong>Multi-Symbol View</strong>: http://localhost:3001/multi</p>
+        <p><strong>API Health Check</strong>: http://localhost:8000/health</p>
+    </div>
+
+    <h3>Currently Monitored Symbols</h3>
+    <ul>
+        <li><strong>BTCUSDT</strong> - Bitcoin/USDT</li>
+        <li><strong>ETHUSDT</strong> - Ethereum/USDT</li>
+        <li><strong>PAXGUSDT</strong> - Pax Gold/USDT</li>
+    </ul>
+
+    <h2 id="dashboard">3. Dashboard Guide</h2>
+    
+    <h3>Single Symbol Dashboard (/)</h3>
+    <p>The single symbol view provides detailed analysis for one asset at a time.</p>
+
+    <h4>Header Section</h4>
+    <ul>
+        <li><strong>Symbol Selector</strong>: Dropdown to switch between monitored assets</li>
+        <li><strong>Connection Status</strong>: Green = Connected, Red = Disconnected</li>
+        <li><strong>Last Update</strong>: Shows when data was last refreshed</li>
+        <li><strong>Multi-Symbol Button</strong>: Switch to grid view</li>
+    </ul>
+
+    <h4>Key Metrics Cards</h4>
+    <ol>
+        <li><strong>Current Price</strong> - Real-time asset price</li>
+        <li><strong>Delta</strong> - Net buying/selling pressure (current candle)</li>
+        <li><strong>Cumulative Delta</strong> - Running total of delta</li>
+        <li><strong>Spoofs (60s)</strong> - Number of spoofed orders detected</li>
+    </ol>
+
+    <h4>Order Book DOM (Depth of Market)</h4>
+    <p>Visual representation of bid/ask walls:</p>
+    <ul>
+        <li><strong>Green bars</strong> = Buy orders (bids)</li>
+        <li><strong>Red bars</strong> = Sell orders (asks)</li>
+        <li>Bar length = Order size</li>
+        <li>Helps identify support/resistance levels</li>
+    </ul>
+
+    <h4>Fingerprint Detection</h4>
+    <p>Shows active institutional patterns:</p>
+    <ul>
+        <li><span class="checkmark">✅</span> <strong>Absorption</strong> - Large orders being absorbed</li>
+        <li><span class="checkmark">✅</span> <strong>Iceberg</strong> - Hidden large orders detected</li>
+        <li><span class="checkmark">✅</span> <strong>Stop Hunt</strong> - Liquidity sweep confirmed</li>
+        <li><span class="checkmark">✅</span> <strong>Divergence</strong> - Price/delta mismatch</li>
+    </ul>
+
+    <h2 id="multi">4. Multi-Symbol Monitoring</h2>
+    
+    <h3>How It Works</h3>
+    <p>The system runs independent engine instances for each symbol. Each symbol has its own:</p>
+    <ul>
+        <li>WebSocket connection to Binance</li>
+        <li>Order book tracking</li>
+        <li>Trade processing</li>
+        <li>Pattern detection</li>
+        <li>Signal generation</li>
+    </ul>
+
+    <h3>Benefits</h3>
+    <ul>
+        <li><span class="checkmark">✅</span> <strong>Simultaneous Analysis</strong> - No switching delays</li>
+        <li><span class="checkmark">✅</span> <strong>Independent Detection</strong> - Each symbol analyzed separately</li>
+        <li><span class="checkmark">✅</span> <strong>Comprehensive View</strong> - See all opportunities at once</li>
+        <li><span class="checkmark">✅</span> <strong>Efficient Monitoring</strong> - One dashboard for multiple assets</li>
+    </ul>
+
+    <h3>Adding New Symbols</h3>
+    <p>Edit <code>/Users/mac/institutional-footprint/server.py</code>:</p>
+    <pre><code>multi_engine = MultiSymbolEngine([
+    "BTCUSDT", 
+    "ETHUSDT", 
+    "PAXGUSDT",
+    "XAUUSDT"  # Add more symbols here
+])</code></pre>
+
+    <h2 id="signals">5. Signal Interpretation</h2>
+    
+    <h3>Scoring System</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Pattern</th>
+                <th>Max Score</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Absorption</td>
+                <td>+3</td>
+                <td>Large orders absorbed at level</td>
+            </tr>
+            <tr>
+                <td>Iceberg</td>
+                <td>+2</td>
+                <td>Hidden large order detected</td>
+            </tr>
+            <tr>
+                <td>Stop Hunt</td>
+                <td>+4</td>
+                <td>Confirmed liquidity sweep</td>
+            </tr>
+            <tr>
+                <td>Delta Divergence</td>
+                <td>+2</td>
+                <td>Price/delta mismatch</td>
+            </tr>
+            <tr>
+                <td>Volume Spike</td>
+                <td>+1</td>
+                <td>3x+ average volume</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Signal Thresholds</h3>
+    <ul>
+        <li><strong>MONITOR</strong> (Score &lt; 6): Watch for setup development</li>
+        <li><strong>MEDIUM</strong> (Score 6-8): Potential opportunity forming</li>
+        <li><strong>HIGH</strong> (Score 9+): Strong institutional activity detected</li>
+    </ul>
+
+    <h3>Signal Types</h3>
+    
+    <h4>LONG Signal</h4>
+    <p>Generated when:</p>
+    <ul>
+        <li>Stop hunt confirmed with reclaim</li>
+        <li>Bullish delta divergence</li>
+        <li>Absorption at support</li>
+        <li>Score ≥ 6</li>
+    </ul>
+    <p><strong>Entry</strong>: Current market price<br>
+    <strong>Stop Loss</strong>: Below swept low (0.2% buffer)</p>
+
+    <h4>SHORT Signal</h4>
+    <p>Generated when:</p>
+    <ul>
+        <li>Stop hunt confirmed with rejection</li>
+        <li>Bearish delta divergence</li>
+        <li>Absorption at resistance</li>
+        <li>Score ≥ 6</li>
+    </ul>
+    <p><strong>Entry</strong>: Current market price<br>
+    <strong>Stop Loss</strong>: Above swept high (0.2% buffer)</p>
+
+    <h2 id="telegram">6. Telegram Notifications</h2>
+    
+    <h3>Setup</h3>
+    <ol>
+        <li>Create a Telegram bot via @BotFather</li>
+        <li>Get your bot token</li>
+        <li>Get your chat ID (message @userinfobot)</li>
+        <li>Edit <code>.env</code> file with credentials</li>
+        <li>Restart the system</li>
+    </ol>
+
+    <h3>Notification Triggers</h3>
+    <p>Telegram alerts are sent when:</p>
+    <ul>
+        <li>Signal is LONG or SHORT</li>
+        <li>Conviction is HIGH or MEDIUM</li>
+        <li>Score threshold is met</li>
+    </ul>
+
+    <h3>Test Notifications</h3>
+    <pre><code>curl -X POST http://localhost:8000/telegram/test</code></pre>
+
+    <h2 id="management">7. System Management</h2>
+    
+    <h3>Start/Stop Commands</h3>
+    <pre><code># Start both backend and dashboard
+./start-all.sh start
+
+# Stop all services
+./start-all.sh stop
+
+# Restart everything
+./start-all.sh restart
+
+# Check status
+./start-all.sh status</code></pre>
+
+    <h3>Viewing Logs</h3>
+    <pre><code># Backend logs
+tail -f logs/backend.log
+
+# Dashboard logs
+tail -f logs/dashboard.log
+
+# Errors only
+tail -f logs/backend-error.log</code></pre>
+
+    <h3>Auto-Start on Boot (macOS)</h3>
+    <pre><code># Install auto-start
+cp com.institutional.footprint.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.institutional.footprint.plist
+
+# Remove auto-start
+launchctl unload ~/Library/LaunchAgents/com.institutional.footprint.plist
+rm ~/Library/LaunchAgents/com.institutional.footprint.plist</code></pre>
+
+    <h2 id="troubleshooting">8. Troubleshooting</h2>
+    
+    <h3>Dashboard Not Loading</h3>
+    <p><strong>Problem</strong>: http://localhost:3001 shows error</p>
+    <p><strong>Solution</strong>:</p>
+    <pre><code># Check if dashboard is running
+cat dashboard.pid
+ps -p $(cat dashboard.pid)
+
+# Restart dashboard
+./start-all.sh restart</code></pre>
+
+    <h3>No Data Showing</h3>
+    <p><strong>Problem</strong>: Dashboard shows price $0.00 or empty charts</p>
+    <p><strong>Solution</strong>:</p>
+    <pre><code># Check backend status
+curl http://localhost:8000/health
+
+# Check backend logs
+tail -20 logs/backend.log | grep ENGINE
+
+# Verify WebSocket connection
+tail -20 logs/backend.log | grep "Received message"</code></pre>
+
+    <h3>Port Already in Use</h3>
+    <p><strong>Problem</strong>: Error "Address already in use"</p>
+    <p><strong>Solution</strong>:</p>
+    <pre><code># Find process using port
+lsof -i :8000  # Backend
+lsof -i :3001  # Dashboard
+
+# Kill the process
+kill -9 &lt;PID&gt;
+
+# Restart
+./start-all.sh restart</code></pre>
+
+    <h2 id="advanced">9. Advanced Configuration</h2>
+    
+    <h3>Adjusting Detection Thresholds</h3>
+    <p>Edit <code>/Users/mac/institutional-footprint/engine.py</code>:</p>
+    <pre><code># Wall detection thresholds
+LARGE_WALL_THRESHOLD = 50.0          # BTC — adjust per asset
+WALL_REFRESH_THRESHOLD = 3           # Times wall must refresh
+SPOOF_CANCEL_THRESHOLD = 0.8         # 80% cancellation rate
+
+# Absorption detection
+ABSORPTION_DURATION_MIN = 2          # Minimum candles
+ABSORPTION_SIZE_RATIO = 1.5          # Size vs average</code></pre>
+
+    <h3>API Rate Limiting</h3>
+    <p>The system polls every 3 seconds by default. To change, edit the dashboard polling interval.</p>
+
+    <h2 id="api">10. API Reference</h2>
+    
+    <h3>Endpoints</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Endpoint</th>
+                <th>Method</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/health</code></td>
+                <td>GET</td>
+                <td>System health status</td>
+            </tr>
+            <tr>
+                <td><code>/state</code></td>
+                <td>GET</td>
+                <td>Market state (single symbol)</td>
+            </tr>
+            <tr>
+                <td><code>/multi/state</code></td>
+                <td>GET</td>
+                <td>Market state (all symbols)</td>
+            </tr>
+            <tr>
+                <td><code>/multi/summary</code></td>
+                <td>GET</td>
+                <td>Compact summary for dashboard</td>
+            </tr>
+            <tr>
+                <td><code>/signals/history</code></td>
+                <td>GET</td>
+                <td>Recent signal history</td>
+            </tr>
+            <tr>
+                <td><code>/symbols</code></td>
+                <td>GET</td>
+                <td>List of supported symbols</td>
+            </tr>
+            <tr>
+                <td><code>/telegram/test</code></td>
+                <td>POST</td>
+                <td>Test Telegram notification</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <div class="warning">
+        <h4>⚠️ Trading Disclaimer</h4>
+        <p>This system is for <strong>educational and informational purposes only</strong>. It does not constitute financial advice. Cryptocurrency trading involves substantial risk of loss. Always do your own research and consider your risk tolerance before trading.</p>
+    </div>
+
+    <div class="success">
+        <h4>Quick Reference</h4>
+        <p><strong>URLs</strong>:<br>
+        Single Dashboard: http://localhost:3001<br>
+        Multi Dashboard: http://localhost:3001/multi<br>
+        API Health: http://localhost:8000/health</p>
+        
+        <p><strong>Commands</strong>:<br>
+        <code>./start-all.sh start</code> - Start system<br>
+        <code>./start-all.sh stop</code> - Stop system<br>
+        <code>./start-all.sh restart</code> - Restart system<br>
+        <code>./start-all.sh status</code> - Check status</p>
+    </div>
+
+    <hr>
+    
+    <p style="text-align: center; color: #6b7280; margin-top: 40px;">
+        <em>Institutional Footprint Detection System v2.0.0 | April 2026</em>
+    </p>
+
+    <div class="no-print" style="margin-top: 40px; padding: 20px; background: #f3f4f6; border-radius: 8px; text-align: center;">
+        <p style="margin-bottom: 10px;"><strong>To save as PDF:</strong></p>
+        <p>Press <kbd>Cmd+P</kbd> (Mac) or <kbd>Ctrl+P</kbd> (Windows/Linux)</p>
+        <p>Select "Save as PDF" as the destination</p>
+    </div>
+</body>
+</html>
