@@ -1,0 +1,22 @@
+[Unit]
+Description=Institutional Entry Detection System
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/path/to/institutional-footprint
+EnvironmentFile=/path/to/institutional-footprint/.env
+ExecStart=/usr/bin/python3 /path/to/institutional-footprint/server.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/path/to/institutional-footprint/server.log
+StandardError=append:/path/to/institutional-footprint/server_error.log
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/path/to/institutional-footprint
+
+[Install]
+WantedBy=multi-user.target
