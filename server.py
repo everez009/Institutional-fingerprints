@@ -30,7 +30,7 @@ app.add_middleware(
 # engine = InstitutionalEntryEngine("BTCUSDT")
 
 # Option 2: Multi-symbol monitoring (active)
-multi_engine = MultiSymbolEngine(["BTCUSDT", "ETHUSDT", "PAXGUSDT","XAUUSDT"])
+multi_engine = MultiSymbolEngine(["BTCUSDT", "ETHUSDT", "PAXGUSDT"])
 
 # For backward compatibility, create a default engine
 engine = InstitutionalEntryEngine("BTCUSDT")
