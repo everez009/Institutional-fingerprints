@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 from engine import InstitutionalEntryEngine
+from multi_engine import MultiSymbolEngine
 
 app = FastAPI(title="Institutional Entry Detection API")
 
@@ -23,7 +24,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global engine instance
+# Global engine instances
+# Option 1: Single symbol (commented out)
+# engine = InstitutionalEntryEngine("BTCUSDT")
+
+# Option 2: Multi-symbol monitoring (active)
+multi_engine = MultiSymbolEngine(["BTCUSDT", "ETHUSDT", "PAXGUSDT"])
+
+# For backward compatibility, create a default engine
 engine = InstitutionalEntryEngine("BTCUSDT")
 connected_clients: list[WebSocket] = []
 
@@ -154,9 +162,27 @@ async def switch_symbol(request: dict):
 async def get_symbols():
     """Get supported symbols"""
     return JSONResponse({
-        "current": engine.symbol.upper(),
+        "current": list(multi_engine.engines.keys()) if multi_engine.engines else [],
         "supported": ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "XAUUSDT"]
     })
+
+
+@app.get("/multi/state")
+async def get_multi_state():
+    """Get market state for all monitored symbols"""
+    return JSONResponse(multi_engine.get_all_states())
+
+
+@app.get("/multi/signals")
+async def get_multi_signals():
+    """Get latest signals for all monitored symbols"""
+    return JSONResponse(multi_engine.get_all_signals())
+
+
+@app.get("/multi/summary")
+async def get_multi_summary():
+    """Get summary of all symbols for dashboard"""
+    return JSONResponse(multi_engine.get_summary())
 
 
 @app.websocket("/ws")
@@ -178,10 +204,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.on_event("startup")
 async def startup():
-    print("[SERVER] Starting engine...")
+    print("[SERVER] Starting multi-symbol engine...")
     try:
-        asyncio.create_task(engine.run())
-        print("[SERVER] Engine task created successfully")
+        # Start all symbol engines
+        asyncio.create_task(multi_engine.start_all())
+        print(f"[SERVER] Multi-symbol engine started with {len(multi_engine.symbols)} symbols")
     except Exception as e:
         print(f"[SERVER] Error starting engine: {e}")
         import traceback

@@ -162,6 +162,14 @@ export default function Dashboard() {
           <p className="text-sm text-gray-500 mt-1">Real-time Order Flow Detection System</p>
         </div>
         <div className="flex items-center gap-4">
+          {/* Link to Multi-Symbol View */}
+          <a 
+            href="/multi" 
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-mono transition flex items-center gap-2"
+          >
+            <Activity className="w-4 h-4" />
+            MULTI-SYMBOL VIEW
+          </a>
           {/* Symbol Selector */}
           <div className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2 border border-gray-800">
             <span className="text-xs text-gray-500">SYMBOL:</span>
