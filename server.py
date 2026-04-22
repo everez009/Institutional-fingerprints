@@ -224,8 +224,10 @@ async def switch_symbol(request: dict):
 @app.get("/symbols")
 async def get_symbols():
     """Get supported symbols"""
+    current_symbols = list(multi_engine.engines.keys()) if multi_engine.engines else ["BTCUSDT"]
     return JSONResponse({
-        "current": list(multi_engine.engines.keys()) if multi_engine.engines else [],
+        "current": current_symbols[0] if current_symbols else "BTCUSDT",  # Return first symbol as default
+        "all": current_symbols,  # All active symbols
         "supported": ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "XAUUSDT"]
     })
 
@@ -332,6 +334,41 @@ async def send_market_update():
             return JSONResponse({"error": "Failed to send"}, status_code=500)
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+# ─────────────────────────────────────────────
+# XAUUSD SMART MONEY CONCEPTS (SMC) ENDPOINTS
+# ─────────────────────────────────────────────
+
+@app.get("/api/xauusd-smc")
+async def get_xauusd_smc_data():
+    """Get XAUUSD Smart Money Concepts analysis data"""
+    state_file = 'xauusd_smc_state.json'
+    try:
+        if os.path.exists(state_file):
+            with open(state_file, 'r') as f:
+                data = json.load(f)
+            return {"status": "success", "data": data}
+        else:
+            return {"status": "pending", "message": "No data available yet. Monitor may be starting."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/xauusd-smc/signals")
+async def get_xauusd_smc_signals():
+    """Get recent XAUUSD SMC signals"""
+    state_file = 'xauusd_smc_state.json'
+    try:
+        if os.path.exists(state_file):
+            with open(state_file, 'r') as f:
+                data = json.load(f)
+            signals = data.get('signals', [])
+            return {"status": "success", "signals": signals, "count": len(signals)}
+        else:
+            return {"status": "pending", "signals": [], "count": 0}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 # ─────────────────────────────────────────────
