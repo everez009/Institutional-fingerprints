@@ -415,7 +415,7 @@ class XAUUSDSMCMonitor:
         if not self.api_key:
             raise ValueError("TWELVE_DATA_API_KEY not found in environment variables")
             
-        self.symbol = "XAUUSD"
+        self.symbol = "XAU/USD"
         self.interval = "5min"
         self.htf_interval = "4h"
         
