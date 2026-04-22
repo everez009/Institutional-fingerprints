@@ -79,17 +79,70 @@ engine.on_signal = on_signal
 
 @app.get("/state")
 async def get_state():
+    """Get market state for default symbol (BTCUSDT from multi-engine)"""
+    # Try to get data from multi-engine first
+    try:
+        summary = multi_engine.get_summary()
+        btc_data = next((s for s in summary if s['symbol'] == 'BTCUSDT'), None)
+        if btc_data and btc_data.get('price', 0) > 0:
+            # Return multi-engine data formatted for single-symbol view
+            return JSONResponse({
+                "price": btc_data['price'],
+                "delta": btc_data.get('delta', 0),
+                "cumulative_delta": btc_data.get('cumulative_delta', 0),
+                "absorption": {"detected": btc_data.get('absorption', False)},
+                "iceberg": {"detected": btc_data.get('iceberg', False)},
+                "stop_hunt": {"detected": btc_data.get('stop_hunt', False)},
+                "divergence": btc_data.get('divergence', 'none'),
+                "spoofs_60s": btc_data.get('spoofs_60s', 0),
+                "top_bids": [],
+                "top_asks": [],
+                "phase": {
+                    "absorption_active": btc_data.get('absorption', False),
+                    "stop_hunt_occurred": btc_data.get('stop_hunt', False),
+                    "delta_confirmed": False,
+                    "reclaim_confirmed": False
+                },
+                "latest_signal": {
+                    "signal": btc_data.get('signal', 'FLAT'),
+                    "conviction": btc_data.get('conviction', 'LOW'),
+                    "total_score": btc_data.get('score', 0),
+                    "phase": btc_data.get('phase', 'NONE')
+                },
+                "timestamp": btc_data.get('timestamp', time.time())
+            })
+    except Exception as e:
+        print(f"[ERROR] Getting state from multi-engine: {e}")
+    
+    # Fallback to single engine (will be empty if not running)
     return JSONResponse(engine.build_market_state())
 
 
 @app.get("/signal")
 async def get_latest_signal():
+    """Get latest signal for default symbol (BTCUSDT from multi-engine)"""
+    try:
+        summary = multi_engine.get_summary()
+        btc_data = next((s for s in summary if s['symbol'] == 'BTCUSDT'), None)
+        if btc_data:
+            return JSONResponse({
+                "signal": btc_data.get('signal', 'FLAT'),
+                "conviction": btc_data.get('conviction', 'LOW'),
+                "total_score": btc_data.get('score', 0),
+                "phase": btc_data.get('phase', 'NONE')
+            })
+    except Exception as e:
+        print(f"[ERROR] Getting signal from multi-engine: {e}")
+    
     return JSONResponse(engine.latest_signal or {"signal": "FLAT", "conviction": "LOW"})
 
 
 @app.get("/signals/history")
 async def get_signal_history():
-    return JSONResponse(list(engine.signal_history))
+    """Get signal history - returns recent signals from multi-engine BTCUSDT"""
+    # For now, return empty array since we're using multi-engine
+    # In future, could store history per symbol
+    return JSONResponse(list(engine.signal_history)[-20:])  # Last 20 signals
 
 
 @app.get("/payload")
