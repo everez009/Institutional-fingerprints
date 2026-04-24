@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Activity, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw, Zap } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw, Zap, Grid, List } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -159,17 +159,28 @@ export default function Dashboard() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold font-mono tracking-wider">INSTITUTIONAL FOOTPRINT</h1>
-          <p className="text-sm text-gray-500 mt-1">Real-time Order Flow Detection System</p>
+          <p className="text-sm text-gray-500 mt-1">Real-time Order Flow Detection System <span className="text-blue-400">| 5m Timeframe</span></p>
         </div>
         <div className="flex items-center gap-4">
-          {/* Link to Multi-Symbol View */}
-          <a 
-            href="/multi" 
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-mono transition flex items-center gap-2"
-          >
-            <Activity className="w-4 h-4" />
-            MULTI-SYMBOL VIEW
-          </a>
+          {/* View Toggle */}
+          <div className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2 border border-gray-800">
+            <a 
+              href="/" 
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-sm font-mono transition"
+              title="Single Symbol View"
+            >
+              <List className="w-4 h-4" />
+              SINGLE
+            </a>
+            <a 
+              href="/multi" 
+              className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-800 rounded text-sm font-mono transition text-gray-400 hover:text-white"
+              title="Multi-Symbol View"
+            >
+              <Grid className="w-4 h-4" />
+              MULTI
+            </a>
+          </div>
           {/* Symbol Selector */}
           <div className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2 border border-gray-800">
             <span className="text-xs text-gray-500">SYMBOL:</span>

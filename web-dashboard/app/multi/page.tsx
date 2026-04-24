@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Activity, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw, Grid, List } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -86,9 +86,28 @@ export default function MultiSymbolDashboard() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold font-mono tracking-wider">INSTITUTIONAL FOOTPRINT</h1>
-          <p className="text-sm text-gray-500 mt-1">Multi-Symbol Real-Time Monitoring</p>
+          <p className="text-sm text-gray-500 mt-1">Multi-Symbol Real-Time Monitoring <span className="text-blue-400">| 5m Timeframe</span></p>
         </div>
         <div className="flex items-center gap-4">
+          {/* View Toggle */}
+          <div className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2 border border-gray-800">
+            <a 
+              href="/" 
+              className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-800 rounded text-sm font-mono transition text-gray-400 hover:text-white"
+              title="Single Symbol View"
+            >
+              <List className="w-4 h-4" />
+              SINGLE
+            </a>
+            <a 
+              href="/multi" 
+              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-sm font-mono transition"
+              title="Multi-Symbol View"
+            >
+              <Grid className="w-4 h-4" />
+              MULTI
+            </a>
+          </div>
           <div className="flex items-center gap-2">
             {connected ? (
               <Wifi className="w-5 h-5 text-green-400" />
