@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-04-24T21:11:45.484943",
-  "current_price": 4700.39915,
-  "atr": 4.63934857142827,
+  "timestamp": "2026-04-24T21:16:46.499204",
+  "current_price": 4703.48353,
+  "atr": 4.645017857142583,
   "htf_bias": "bearish",
   "structures": [],
-  "active_fvgs": 7,
+  "active_fvgs": 8,
   "liquidity_zones": 10,
   "signals": []
 }
