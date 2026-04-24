@@ -43,10 +43,12 @@ export default function MultiSymbolDashboard() {
         summaryData.forEach((sym: SymbolData) => {
           const currentSignal = sym.signal;
           const prevSignal = previousSignals[sym.symbol];
+          const score = sym.score || 0;
           
-          if (currentSignal && currentSignal !== prevSignal && currentSignal !== 'FLAT') {
-            // New signal detected!
-            const message = `${sym.symbol}: ${currentSignal} | ${sym.conviction} | Score: ${sym.score > 0 ? '+' : ''}${sym.score}`;
+          // Only alert if signal meets minimum threshold (score >= 6)
+          if (currentSignal && currentSignal !== prevSignal && currentSignal !== 'FLAT' && score >= 6) {
+            // New qualifying signal detected!
+            const message = `${sym.symbol}: ${currentSignal} | ${sym.conviction} | Score: ${score > 0 ? '+' : ''}${score}`;
             
             // Add to alerts
             setAlerts(prev => [{

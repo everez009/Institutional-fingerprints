@@ -66,10 +66,12 @@ export default function Dashboard() {
       
       // Check for new signal
       const newSignal = stateData.latest_signal?.signal;
-      if (newSignal && newSignal !== previousSignal && newSignal !== 'FLAT') {
-        // New signal detected!
+      const score = stateData.latest_signal?.total_score || 0;
+      
+      // Only alert if signal meets minimum threshold (score >= 6)
+      if (newSignal && newSignal !== previousSignal && newSignal !== 'FLAT' && score >= 6) {
+        // New qualifying signal detected!
         const conviction = stateData.latest_signal?.conviction || 'LOW';
-        const score = stateData.latest_signal?.total_score || 0;
         
         setAlertMessage(`${newSignal} Signal | ${conviction} Conviction | Score: ${score > 0 ? '+' : ''}${score}`);
         setAlertType(newSignal as 'LONG' | 'SHORT' | 'MONITOR');
