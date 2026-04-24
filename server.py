@@ -302,6 +302,56 @@ async def telegram_status():
     })
 
 
+@app.post("/alert/telegram")
+async def send_dashboard_alert(request: dict):
+    """Send alert from dashboard to Telegram"""
+    if not telegram.is_configured():
+        return JSONResponse(
+            {"error": "Telegram not configured. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env file"},
+            status_code=400
+        )
+    
+    try:
+        signal = request.get("signal", "UNKNOWN")
+        conviction = request.get("conviction", "LOW")
+        score = request.get("score", 0)
+        symbol = request.get("symbol", "BTCUSDT")
+        timestamp = request.get("timestamp", "")
+        
+        # Format emoji
+        emoji = {
+            "LONG": "🟢",
+            "SHORT": "🔴",
+            "MONITOR": "🟡"
+        }.get(signal, "⚪")
+        
+        conviction_emoji = {
+            "HIGH": "🔥",
+            "MEDIUM": "⚡",
+            "LOW": "💤"
+        }.get(conviction, "")
+        
+        message = f"""
+{emoji} *DASHBOARD ALERT* {conviction_emoji}
+
+*Symbol:* {symbol}
+*Signal:* {signal}
+*Conviction:* {conviction}
+*Score:* {score:+d}
+
+_Time: {timestamp}_
+        """.strip()
+        
+        success = await telegram._send_message(message, parse_mode="Markdown")
+        
+        if success:
+            return JSONResponse({"status": "success", "message": "Telegram alert sent"})
+        else:
+            return JSONResponse({"error": "Failed to send Telegram message"}, status_code=500)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 @app.post("/telegram/market-update")
 async def send_market_update():
     """Send current market state via Telegram"""

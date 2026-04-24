@@ -56,6 +56,7 @@ export default function Dashboard() {
   const [alertType, setAlertType] = useState<'LONG' | 'SHORT' | 'MONITOR' | null>(null);
   const [previousSignal, setPreviousSignal] = useState<string>('');
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [telegramEnabled, setTelegramEnabled] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -86,6 +87,21 @@ export default function Dashboard() {
           utterance.pitch = 1;
           utterance.volume = 1;
           window.speechSynthesis.speak(utterance);
+        }
+        
+        // Telegram alert
+        if (telegramEnabled) {
+          fetch(`${API_URL}/alert/telegram`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              signal: newSignal,
+              conviction: conviction,
+              score: score,
+              symbol: currentSymbol,
+              timestamp: new Date().toISOString()
+            })
+          }).catch(err => console.error('Telegram alert failed:', err));
         }
         
         // Auto-hide alert after 8 seconds
@@ -285,6 +301,15 @@ export default function Dashboard() {
             title={voiceEnabled ? "Voice Alerts ON" : "Voice Alerts OFF"}
           >
             {voiceEnabled ? '🔊' : '🔇'}
+          </button>
+          
+          {/* Telegram Alert Toggle */}
+          <button 
+            onClick={() => setTelegramEnabled(!telegramEnabled)}
+            className={`p-2 rounded transition ${telegramEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-800 hover:bg-gray-700'}`}
+            title={telegramEnabled ? "Telegram Alerts ON" : "Telegram Alerts OFF"}
+          >
+            {telegramEnabled ? '📱' : '📴'}
           </button>
         </div>
       </div>

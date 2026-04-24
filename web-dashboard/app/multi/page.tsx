@@ -31,6 +31,7 @@ export default function MultiSymbolDashboard() {
   const [alerts, setAlerts] = useState<Array<{symbol: string, message: string, type: string, time: Date}>>([]);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [previousSignals, setPreviousSignals] = useState<Record<string, string>>({});
+  const [telegramEnabled, setTelegramEnabled] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -65,6 +66,21 @@ export default function MultiSymbolDashboard() {
               );
               utterance.rate = 1.1;
               window.speechSynthesis.speak(utterance);
+            }
+            
+            // Telegram alert
+            if (telegramEnabled) {
+              fetch(`${API_URL}/alert/telegram`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  signal: currentSignal,
+                  conviction: sym.conviction,
+                  score: score,
+                  symbol: sym.symbol,
+                  timestamp: new Date().toISOString()
+                })
+              }).catch(err => console.error('Telegram alert failed:', err));
             }
             
             // Update previous signal
@@ -201,6 +217,15 @@ export default function MultiSymbolDashboard() {
             title={voiceEnabled ? "Voice Alerts ON" : "Voice Alerts OFF"}
           >
             {voiceEnabled ? '🔊' : '🔇'}
+          </button>
+          
+          {/* Telegram Alert Toggle */}
+          <button 
+            onClick={() => setTelegramEnabled(!telegramEnabled)}
+            className={`p-2 rounded transition ${telegramEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-800 hover:bg-gray-700'}`}
+            title={telegramEnabled ? "Telegram Alerts ON" : "Telegram Alerts OFF"}
+          >
+            {telegramEnabled ? '📱' : '📴'}
           </button>
         </div>
       </div>
