@@ -28,6 +28,9 @@ export default function MultiSymbolDashboard() {
   const [connected, setConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [availableSymbols, setAvailableSymbols] = useState<string[]>(['BTCUSDT', 'ETHUSDT', 'PAXGUSDT']);
+  const [alerts, setAlerts] = useState<Array<{symbol: string, message: string, type: string, time: Date}>>([]);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [previousSignals, setPreviousSignals] = useState<Record<string, string>>({});
 
   const fetchData = useCallback(async () => {
     try {
@@ -35,6 +38,38 @@ export default function MultiSymbolDashboard() {
       const summaryRes = await fetch(`${API_URL}/multi/summary`);
       if (summaryRes.ok) {
         const summaryData = await summaryRes.json();
+        
+        // Check for new signals
+        summaryData.forEach((sym: SymbolData) => {
+          const currentSignal = sym.signal;
+          const prevSignal = previousSignals[sym.symbol];
+          
+          if (currentSignal && currentSignal !== prevSignal && currentSignal !== 'FLAT') {
+            // New signal detected!
+            const message = `${sym.symbol}: ${currentSignal} | ${sym.conviction} | Score: ${sym.score > 0 ? '+' : ''}${sym.score}`;
+            
+            // Add to alerts
+            setAlerts(prev => [{
+              symbol: sym.symbol,
+              message,
+              type: currentSignal,
+              time: new Date()
+            }, ...prev].slice(0, 5)); // Keep last 5 alerts
+            
+            // Voice alert for HIGH or MEDIUM conviction
+            if (voiceEnabled && (sym.conviction === 'HIGH' || sym.conviction === 'MEDIUM') && 'speechSynthesis' in window) {
+              const utterance = new SpeechSynthesisUtterance(
+                `${sym.symbol} ${currentSignal} signal. ${sym.conviction} conviction.`
+              );
+              utterance.rate = 1.1;
+              window.speechSynthesis.speak(utterance);
+            }
+            
+            // Update previous signal
+            setPreviousSignals(prev => ({ ...prev, [sym.symbol]: currentSignal }));
+          }
+        });
+        
         setSymbols(summaryData);
         setLastUpdate(new Date());
         setConnected(true);
@@ -82,6 +117,36 @@ export default function MultiSymbolDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 p-6">
+      {/* Alert Banner */}
+      {alerts.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 space-y-2 max-w-md">
+          {alerts.map((alert, i) => (
+            <div 
+              key={i}
+              className={`px-4 py-3 rounded-lg shadow-xl border-2 animate-pulse ${
+                alert.type === 'LONG' ? 'bg-green-500/20 border-green-500 text-green-400' :
+                alert.type === 'SHORT' ? 'bg-red-500/20 border-red-500 text-red-400' :
+                'bg-yellow-500/20 border-yellow-500 text-yellow-400'
+              }`}
+              style={{ animationDuration: '2s' }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold font-mono">{alert.message}</div>
+                  <div className="text-xs mt-1">{alert.time.toLocaleTimeString()}</div>
+                </div>
+                <button 
+                  onClick={() => setAlerts(prev => prev.filter((_, idx) => idx !== i))}
+                  className="ml-2 p-1 hover:bg-gray-800 rounded"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -123,8 +188,17 @@ export default function MultiSymbolDashboard() {
               Last update: {formatDistanceToNow(lastUpdate, { addSuffix: true })}
             </span>
           )}
-          <button onClick={fetchData} className="p-2 hover:bg-gray-800 rounded transition">
+          <button onClick={fetchData} className="p-2 hover:bg-gray-800 rounded transition" title="Refresh Data">
             <RefreshCw className="w-5 h-5" />
+          </button>
+          
+          {/* Voice Alert Toggle */}
+          <button 
+            onClick={() => setVoiceEnabled(!voiceEnabled)}
+            className={`p-2 rounded transition ${voiceEnabled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-700'}`}
+            title={voiceEnabled ? "Voice Alerts ON" : "Voice Alerts OFF"}
+          >
+            {voiceEnabled ? '🔊' : '🔇'}
           </button>
         </div>
       </div>

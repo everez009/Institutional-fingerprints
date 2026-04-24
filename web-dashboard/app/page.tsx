@@ -51,6 +51,11 @@ export default function Dashboard() {
   const [deltaHistory, setDeltaHistory] = useState<{ time: string; delta: number; cumDelta: number }[]>([]);
   const [currentSymbol, setCurrentSymbol] = useState('BTCUSDT');
   const [availableSymbols, setAvailableSymbols] = useState<string[]>(['BTCUSDT', 'ETHUSDT', 'PAXGUSDT', 'XAUUSDT']);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState<'LONG' | 'SHORT' | 'MONITOR' | null>(null);
+  const [previousSignal, setPreviousSignal] = useState<string>('');
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
@@ -58,6 +63,38 @@ export default function Dashboard() {
       const stateRes = await fetch(`${API_URL}/state`);
       if (!stateRes.ok) throw new Error('Failed to fetch state');
       const stateData = await stateRes.json();
+      
+      // Check for new signal
+      const newSignal = stateData.latest_signal?.signal;
+      if (newSignal && newSignal !== previousSignal && newSignal !== 'FLAT') {
+        // New signal detected!
+        const conviction = stateData.latest_signal?.conviction || 'LOW';
+        const score = stateData.latest_signal?.total_score || 0;
+        
+        setAlertMessage(`${newSignal} Signal | ${conviction} Conviction | Score: ${score > 0 ? '+' : ''}${score}`);
+        setAlertType(newSignal as 'LONG' | 'SHORT' | 'MONITOR');
+        setAlertVisible(true);
+        
+        // Voice alert
+        if (voiceEnabled && 'speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(
+            `${newSignal} signal detected. ${conviction} conviction. Score: ${score}.`
+          );
+          utterance.rate = 1.1;
+          utterance.pitch = 1;
+          utterance.volume = 1;
+          window.speechSynthesis.speak(utterance);
+        }
+        
+        // Auto-hide alert after 8 seconds
+        setTimeout(() => setAlertVisible(false), 8000);
+      }
+      
+      // Update previous signal
+      if (newSignal) {
+        setPreviousSignal(newSignal);
+      }
+      
       setMarketState(stateData);
       setLastUpdate(new Date());
       setConnected(true);
@@ -155,6 +192,31 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 p-6">
+      {/* Alert Banner */}
+      {alertVisible && (
+        <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-2xl border-2 animate-pulse ${
+          alertType === 'LONG' ? 'bg-green-500/20 border-green-500 text-green-400' :
+          alertType === 'SHORT' ? 'bg-red-500/20 border-red-500 text-red-400' :
+          'bg-yellow-500/20 border-yellow-500 text-yellow-400'
+        }`}>
+          <div className="flex items-center gap-4">
+            <div className="text-2xl">
+              {alertType === 'LONG' ? '🟢' : alertType === 'SHORT' ? '🔴' : '🟡'}
+            </div>
+            <div>
+              <div className="text-xl font-bold font-mono">{alertMessage}</div>
+              <div className="text-xs mt-1">{currentSymbol} | {new Date().toLocaleTimeString()}</div>
+            </div>
+            <button 
+              onClick={() => setAlertVisible(false)}
+              className="ml-4 p-2 hover:bg-gray-800 rounded"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -210,8 +272,17 @@ export default function Dashboard() {
               Last update: {formatDistanceToNow(lastUpdate, { addSuffix: true })}
             </span>
           )}
-          <button onClick={fetchData} className="p-2 hover:bg-gray-800 rounded transition">
+          <button onClick={fetchData} className="p-2 hover:bg-gray-800 rounded transition" title="Refresh Data">
             <RefreshCw className="w-5 h-5" />
+          </button>
+          
+          {/* Voice Alert Toggle */}
+          <button 
+            onClick={() => setVoiceEnabled(!voiceEnabled)}
+            className={`p-2 rounded transition ${voiceEnabled ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-700'}`}
+            title={voiceEnabled ? "Voice Alerts ON" : "Voice Alerts OFF"}
+          >
+            {voiceEnabled ? '🔊' : '🔇'}
           </button>
         </div>
       </div>
