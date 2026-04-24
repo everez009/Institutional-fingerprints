@@ -84,6 +84,8 @@ class MultiSymbolEngine:
                     "stop_hunt": state.get("stop_hunt", {}).get("detected", False),
                     "divergence": state.get("divergence", "none"),
                     "spoofs_60s": state.get("spoofs_60s", 0),
+                    "top_bids": state.get("top_bids", []),
+                    "top_asks": state.get("top_asks", []),
                     "timestamp": state.get("timestamp", 0)
                 })
             except Exception as e:

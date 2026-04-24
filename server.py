@@ -98,8 +98,8 @@ async def get_state():
                 "stop_hunt": {"detected": symbol_data.get('stop_hunt', False)},
                 "divergence": symbol_data.get('divergence', 'none'),
                 "spoofs_60s": symbol_data.get('spoofs_60s', 0),
-                "top_bids": [],
-                "top_asks": [],
+                "top_bids": symbol_data.get('top_bids', []),
+                "top_asks": symbol_data.get('top_asks', []),
                 "phase": {
                     "absorption_active": symbol_data.get('absorption', False),
                     "stop_hunt_occurred": symbol_data.get('stop_hunt', False),
