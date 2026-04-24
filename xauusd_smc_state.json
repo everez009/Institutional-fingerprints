@@ -1,24 +1,10 @@
 {
-  "timestamp": "2026-04-24T20:21:34.860122",
-  "current_price": 4707.15169,
-  "atr": 4.890133571428448,
+  "timestamp": "2026-04-24T20:26:35.835409",
+  "current_price": 4708.92306,
+  "atr": 4.7381614285712725,
   "htf_bias": "bearish",
-  "structures": [
-    {
-      "type": "BOS",
-      "direction": "bullish"
-    }
-  ],
+  "structures": [],
   "active_fvgs": 5,
   "liquidity_zones": 10,
-  "signals": [
-    {
-      "type": "BOS",
-      "direction": "bullish",
-      "price": 4707.15169,
-      "confidence": 0.8,
-      "description": "BOS BULLISH | HTF: bearish | FVG: Yes | Liq: No",
-      "timestamp": "2026-04-24T20:21:34.859792"
-    }
-  ]
+  "signals": []
 }
