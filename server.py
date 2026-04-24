@@ -79,37 +79,40 @@ engine.on_signal = on_signal
 
 @app.get("/state")
 async def get_state():
-    """Get market state for default symbol (BTCUSDT from multi-engine)"""
-    # Try to get data from multi-engine first
+    """Get market state for current symbol"""
+    # Get current symbol from single engine
+    current_symbol = engine.symbol.upper()
+    
+    # Try to get data from multi-engine for the current symbol
     try:
         summary = multi_engine.get_summary()
-        btc_data = next((s for s in summary if s['symbol'] == 'BTCUSDT'), None)
-        if btc_data and btc_data.get('price', 0) > 0:
+        symbol_data = next((s for s in summary if s['symbol'] == current_symbol), None)
+        if symbol_data and symbol_data.get('price', 0) > 0:
             # Return multi-engine data formatted for single-symbol view
             return JSONResponse({
-                "price": btc_data['price'],
-                "delta": btc_data.get('delta', 0),
-                "cumulative_delta": btc_data.get('cumulative_delta', 0),
-                "absorption": {"detected": btc_data.get('absorption', False)},
-                "iceberg": {"detected": btc_data.get('iceberg', False)},
-                "stop_hunt": {"detected": btc_data.get('stop_hunt', False)},
-                "divergence": btc_data.get('divergence', 'none'),
-                "spoofs_60s": btc_data.get('spoofs_60s', 0),
+                "price": symbol_data['price'],
+                "delta": symbol_data.get('delta', 0),
+                "cumulative_delta": symbol_data.get('cumulative_delta', 0),
+                "absorption": {"detected": symbol_data.get('absorption', False)},
+                "iceberg": {"detected": symbol_data.get('iceberg', False)},
+                "stop_hunt": {"detected": symbol_data.get('stop_hunt', False)},
+                "divergence": symbol_data.get('divergence', 'none'),
+                "spoofs_60s": symbol_data.get('spoofs_60s', 0),
                 "top_bids": [],
                 "top_asks": [],
                 "phase": {
-                    "absorption_active": btc_data.get('absorption', False),
-                    "stop_hunt_occurred": btc_data.get('stop_hunt', False),
+                    "absorption_active": symbol_data.get('absorption', False),
+                    "stop_hunt_occurred": symbol_data.get('stop_hunt', False),
                     "delta_confirmed": False,
                     "reclaim_confirmed": False
                 },
                 "latest_signal": {
-                    "signal": btc_data.get('signal', 'FLAT'),
-                    "conviction": btc_data.get('conviction', 'LOW'),
-                    "total_score": btc_data.get('score', 0),
-                    "phase": btc_data.get('phase', 'NONE')
+                    "signal": symbol_data.get('signal', 'FLAT'),
+                    "conviction": symbol_data.get('conviction', 'LOW'),
+                    "total_score": symbol_data.get('score', 0),
+                    "phase": symbol_data.get('phase', 'NONE')
                 },
-                "timestamp": btc_data.get('timestamp', time.time())
+                "timestamp": symbol_data.get('timestamp', time.time())
             })
     except Exception as e:
         print(f"[ERROR] Getting state from multi-engine: {e}")
@@ -200,35 +203,33 @@ async def force_signal():
 
 @app.post("/symbol/switch")
 async def switch_symbol(request: dict):
-    """Switch trading symbol"""
+    """Switch trading symbol - updates single engine symbol for API consistency"""
     global engine
     symbol = request.get("symbol", "BTCUSDT").upper()
     
     if symbol not in ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "XAUUSDT"]:
         return JSONResponse({"error": "Unsupported symbol"}, status_code=400)
     
-    # Stop old engine
-    print(f"[SERVER] Switching from {engine.symbol.upper()} to {symbol}")
+    # Just update the single engine's symbol (don't restart it - multi-engine has the data)
+    print(f"[SERVER] Switching view to {symbol}")
     
-    # Create new engine with new symbol
+    # Create a new engine instance with just the symbol changed (for API state)
     engine = InstitutionalEntryEngine(symbol)
-    engine.on_market_update = on_market_update
-    engine.on_signal = on_signal
-    
-    # Restart engine
-    asyncio.create_task(engine.run())
     
     return JSONResponse({"status": "success", "symbol": symbol})
 
 
 @app.get("/symbols")
 async def get_symbols():
-    """Get supported symbols"""
-    current_symbols = list(multi_engine.engines.keys()) if multi_engine.engines else ["BTCUSDT"]
+    """Get supported symbols and current symbol"""
+    current_symbol = engine.symbol.upper() if engine else "BTCUSDT"
+    supported = ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "XAUUSDT"]
+    
     return JSONResponse({
-        "current": current_symbols[0] if current_symbols else "BTCUSDT",  # Return first symbol as default
-        "all": current_symbols,  # All active symbols
-        "supported": ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "XAUUSDT"]
+        "current": current_symbol,
+        "all": supported,  # All available symbols
+        "supported": supported,
+        "active_multi": list(multi_engine.engines.keys()) if multi_engine.engines else []
     })
 
 
