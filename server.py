@@ -35,7 +35,7 @@ app.add_middleware(
 # engine = InstitutionalEntryEngine("BTCUSDT")
 
 # Option 2: Multi-symbol monitoring (active)
-multi_engine = MultiSymbolEngine(["BTCUSDT", "ETHUSDT", "PAXGUSDT"])
+multi_engine = MultiSymbolEngine(["BTCUSDT", "ETHUSDT", "PAXGUSDT", "SOLUSDT", "XRPUSDT"])
 
 # For backward compatibility, create a default engine
 engine = InstitutionalEntryEngine("BTCUSDT")
@@ -207,7 +207,7 @@ async def switch_symbol(request: dict):
     global engine
     symbol = request.get("symbol", "BTCUSDT").upper()
     
-    if symbol not in ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "XAUUSDT"]:
+    if symbol not in ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "SOLUSDT", "XRPUSDT", "XAUUSDT"]:
         return JSONResponse({"error": "Unsupported symbol"}, status_code=400)
     
     # Just update the single engine's symbol (don't restart it - multi-engine has the data)
@@ -223,7 +223,7 @@ async def switch_symbol(request: dict):
 async def get_symbols():
     """Get supported symbols and current symbol"""
     current_symbol = engine.symbol.upper() if engine else "BTCUSDT"
-    supported = ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "XAUUSDT"]
+    supported = ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "SOLUSDT", "XRPUSDT", "XAUUSDT"]
     
     return JSONResponse({
         "current": current_symbol,

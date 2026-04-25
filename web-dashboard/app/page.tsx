@@ -50,7 +50,7 @@ export default function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [deltaHistory, setDeltaHistory] = useState<{ time: string; delta: number; cumDelta: number }[]>([]);
   const [currentSymbol, setCurrentSymbol] = useState('BTCUSDT');
-  const [availableSymbols, setAvailableSymbols] = useState<string[]>(['BTCUSDT', 'ETHUSDT', 'PAXGUSDT', 'XAUUSDT']);
+  const [availableSymbols, setAvailableSymbols] = useState<string[]>(['BTCUSDT', 'ETHUSDT', 'PAXGUSDT', 'SOLUSDT', 'XRPUSDT', 'XAUUSDT']);
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState<'LONG' | 'SHORT' | 'MONITOR' | null>(null);

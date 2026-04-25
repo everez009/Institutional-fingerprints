@@ -10,7 +10,7 @@ from engine import InstitutionalEntryEngine
 
 class MultiSymbolEngine:
     def __init__(self, symbols: List[str] = None):
-        self.symbols = symbols or ["BTCUSDT", "ETHUSDT", "PAXGUSDT"]
+        self.symbols = symbols or ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "SOLUSDT", "XRPUSDT"]
         self.engines: Dict[str, InstitutionalEntryEngine] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
         
